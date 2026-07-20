@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Financiero · E.E.T.P. N° 462</title>
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* ===== RESET Y BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f0f6fb;
+      font-family: 'Lato', sans-serif;
+      color: #1a1a1a;
+      line-height: 1.5;
+      padding: 24px;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* ===== FONDO INSPIRADO EN EL PDF ===== */
+    .fondo-pdf {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0.08;
+      font-family: 'Montserrat', sans-serif;
+      color: #221c35;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .fondo-pdf .titulo-grande {
+      font-size: 8rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      line-height: 1;
+    }
+    .fondo-pdf .sub {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-top: -10px;
+    }
+    .fondo-pdf .formula {
+      font-size: 3rem;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+    .fondo-pdf .profesor {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    /* ===== OVERLAY DE CARGA ===== */
+    .overlay-carga {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(34, 28, 53, 0.92);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.6s;
+      padding: 20px;
+    }
+    .overlay-carga.oculto {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .carga-card {
+      background: white;
+      border-radius: 32px;
+      padding: 40px 48px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+      border: 1px solid #e2edf5;
+    }
+    .carga-card h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 1.8rem;
+      color: #221c35;
+      margin-bottom: 8px;
+    }
+    .carga-card p {
+      color: #5f7f92;
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+    .carga-card .campo {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .carga-card .campo label {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #1f6e8c;
+      display: block;
+      margin-bottom: 4px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .carga-card .campo input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 40px;
+      border: 1px solid #c0d9e8;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.95rem;
+      transition: 0.15s;
+    }
+    .carga-card .campo input:focus {
+      outline: none;
+      border-color: #1f6e8c;
+      box-shadow: 0 0 0 3px rgba(31,110,140,0.15);
+    }
+    .btn-cargar {
+      background: #a41e34;
+      color: white;
+      border: none;
+      padding: 14px 34px;
+      border-radius: 60px;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: 0.25s;
+      width: 100%;
+      margin-top: 8px;
+      box-shadow: 0 4px 14px rgba(164,30,52,0.35);
+    }
+    .btn-cargar:hover {
+      transform: scale(1.02);
+      background: #8a1a2c;
+    }
+
+    /* ===== CONTENEDOR PRINCIPAL ===== */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 28px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      border: 1px solid #e2edf5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .app-header h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: #221c35;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .app-header h1 i { color: #a41e34; }
+    .app-header .sub { font-size: 0.85rem; color: #5f7f92; }
+
+    /* ===== MENÚ UCO ===== */
+    .menu-bar {
+      background: #ffffff;
+      border-top: 3px solid #a41e34;
+      border-bottom: 6px solid #a41e34;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 24px;
+      border-radius: 16px 16px 0 0;
+      padding: 0 20px;
+    }
+    .menu-bar .container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0 28px;
+      padding: 10px 0;
+    }
+    .menu-bar a {
+      color: #565656;
+      padding: 4px 0;
+      border-bottom: 2px solid transparent;
+      transition: 0.2s;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .menu-bar a:hover, .menu-bar a.active {
+      color: #a41e34;
+      border-bottom-color: #a41e34;
+    }
+
+    /* ===== SECCIONES ===== */
+    .seccion-contenido {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      border: 1px solid #e2edf5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      display: none;
+    }
+    .seccion-contenido.activa {
+      display: block;
+    }
+    .seccion-contenido h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: #221c35;
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .seccion-contenido h2 i { color: #a41e34; }
+    .seccion-contenido p, .seccion-contenido li {
+      font-size: 0.95rem;
+      color: #1a3e4c;
+      line-height: 1.7;
+    }
+    .seccion-contenido ul { padding-left: 24px; margin: 8px 0; }
+    .seccion-contenido .destacado {
+      background: #f0f8ff;
+      border-left: 5px solid #a41e34;
+      padding: 12px 18px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+    .seccion-contenido .grid-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .seccion-contenido .info-card {
+      background: #f8fcff;
+      border-radius: 16px;
+      padding: 14px 18px;
+      border: 1px solid #e2edf5;
+    }
+    .seccion-contenido .info-card strong {
+      color: #1f6e8c;
+      font-family: 'Montserrat', sans-serif;
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .seccion-contenido .info-card span {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f3b4f;
+    }
+
+    /* ===== TARJETAS ===== */
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 20px;
+      border: 1px solid #e2edf5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      transition: 0.15s;
+      position: relative;
+    }
+    .card:hover { border-color: #cde1ed; }
+    .card-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #1f6e8c;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-title i { font-size: 1rem; }
+    .card-title .edit-hint {
+      font-size: 0.6rem;
+      font-weight: 400;
+      color: #8aaec2;
+      margin-left: auto;
+      background: #f0f6fa;
+      padding: 2px 12px;
+      border-radius: 30px;
+    }
+    .card-title .btn-editar-seccion {
+      font-size: 0.65rem;
+      background: #f0f6fa;
+      border: 1px solid #c0d9e8;
+      border-radius: 30px;
+      padding: 2px 14px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      color: #1f6e8c;
+      transition: 0.15s;
+      margin-left: 8px;
+    }
+    .card-title .btn-editar-seccion:hover {
+      background: #dce8f0;
+    }
+
+    /* ===== KPI ===== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      background: white;
+      border-radius: 18px;
+      padding: 14px 16px;
+      border: 1px solid #e2edf5;
+      transition: 0.15s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    .kpi-card .label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      color: #1f6e8c;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .kpi-card .value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f3b4f;
+      margin-top: 2px;
+    }
+    .kpi-card .value.positive { color: #2b7a4b; }
+    .kpi-card .value.negative { color: #c2412c; }
+    .kpi-card .sub { font-size: 0.6rem; color: #5f7f92; }
+
+    /* ===== GRIDS ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+    .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 18px; }
+    @media (max-width: 992px) { .grid-2, .grid-2-1 { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) {
+      .seccion-contenido .grid-info { grid-template-columns: 1fr; }
+      .app-header { flex-direction: column; align-items: flex-start; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .doc-fields { grid-template-columns: 1fr; }
+      .container { padding: 0 8px; }
+      body { padding: 12px; }
+      .carga-card { padding: 28px 20px; }
+    }
+
+    /* ===== TABLAS ===== */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    th {
+      text-align: left;
+      padding: 6px 4px;
+      font-weight: 700;
+      color: #1f6e8c;
+      border-bottom: 2px solid #e2edf5;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    td { padding: 6px 4px; border-bottom: 1px solid #eaf1f6; vertical-align: middle; }
+    td input {
+      width: 100%;
+      max-width: 90px;
+      padding: 4px 8px;
+      border-radius: 30px;
+      border: 1px solid #c0d9e8;
+      font-family: 'Lato', sans-serif;
+      font-weight: 500;
+      font-size: 0.7rem;
+      background: white;
+      transition: 0.15s;
+    }
+    td input:focus {
+      outline: none;
+      border-color: #1f6e8c;
+      box-shadow: 0 0 0 3px rgba(31,110,140,0.15);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 0.6rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .badge-green { background: #d4edda; color: #1e6f3f; }
+    .badge-yellow { background: #fff3cd; color: #856404; }
+    .badge-red { background: #f8d7da; color: #721c24; }
+
+    .btn-accion {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 30px;
+      transition: 0.15s;
+      color: #1f6e8c;
+    }
+    .btn-accion:hover { background: #e3eef7; }
+    .btn-accion.eliminar { color: #c2412c; }
+    .btn-accion.eliminar:hover { background: #fde8e5; }
+
+    .btn-add {
+      background: #1f6e8c;
+      color: white;
+      border: none;
+      padding: 5px 16px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .btn-add:hover { background: #0f5a74; transform: scale(1.02); }
+
+    .alert-box {
+      padding: 8px 14px;
+      border-radius: 14px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      margin-top: 10px;
+      border-left: 5px solid #1f6e8c;
+      background: #f4fafe;
+    }
+    .alert-box.warning { border-left-color: #f39c12; background: #fff8ee; }
+    .alert-box.success { border-left-color: #2b7a4b; background: #e2f3ea; }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .slider-group label {
+      font-weight: 600;
+      font-size: 0.7rem;
+      color: #1f6e8c;
+      min-width: 120px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .slider-group input[type="range"] {
+      flex: 1;
+      min-width: 100px;
+      accent-color: #1f6e8c;
+      height: 4px;
+      border-radius: 10px;
+      background: #cde1ed;
+    }
+    .slider-group .value { font-weight: 700; font-size: 0.75rem; min-width: 60px; color: #0f3b4f; }
+
+    .chart-container { position: relative; height: 200px; }
+
+    /* ===== DOCUMENTOS ===== */
+    .doc-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .doc-fields label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #1f6e8c;
+      font-family: 'Montserrat', sans-serif;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .doc-fields input, .doc-fields textarea {
+      width: 100%;
+      padding: 5px 10px;
+      border-radius: 30px;
+      border: 1px solid #c0d9e8;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.75rem;
+      background: white;
+    }
+    .doc-fields input:focus, .doc-fields textarea:focus {
+      outline: none;
+      border-color: #1f6e8c;
+      box-shadow: 0 0 0 3px rgba(31,110,140,0.15);
+    }
+    .doc-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .doc-btn {
+      background: #f0f6fa;
+      border: 1px solid #c0d9e8;
+      border-radius: 40px;
+      padding: 5px 16px;
+      font-weight: 600;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: 0.15s;
+      font-family: 'Montserrat', sans-serif;
+      color: #1f6e8c;
+    }
+    .doc-btn:hover { background: #dce8f0; transform: scale(1.02); }
+
+    /* ===== HERRAMIENTAS ===== */
+    .herramienta-item {
+      background: #f8fcff;
+      border-radius: 16px;
+      padding: 14px 18px;
+      border: 1px solid #e2edf5;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .herramienta-item strong {
+      font-family: 'Montserrat', sans-serif;
+      color: #221c35;
+    }
+    .herramienta-item .doc-btn {
+      margin: 0;
+    }
+
+    /* ===== CONTACTO ===== */
+    .consulta-box {
+      background: #f8fcff;
+      border-radius: 16px;
+      padding: 16px 20px;
+      border: 1px solid #e2edf5;
+      margin-top: 16px;
+    }
+    .consulta-box textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 30px;
+      border: 1px solid #c0d9e8;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.9rem;
+      min-height: 80px;
+      resize: vertical;
+    }
+    .consulta-box textarea:focus {
+      outline: none;
+      border-color: #1f6e8c;
+      box-shadow: 0 0 0 3px rgba(31,110,140,0.15);
+    }
+    .turno-info {
+      margin-top: 10px;
+      font-weight: 600;
+      color: #2b7a4b;
+    }
+
+    /* ===== PIE ===== */
+    .footer {
+      background: #221c35;
+      color: #cddbe5;
+      padding: 18px 0 14px;
+      margin-top: 30px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 0.75rem;
+    }
+
+    /* ===== OCULTAR DASHBOARD INICIALMENTE ===== */
+    #dashboardPrincipal {
+      display: none;
+    }
+    #dashboardPrincipal.visible {
+      display: block;
+    }
+
+    /* Botón editar en KPI (pequeño) */
+    .edit-kpi-btn {
+      font-size: 0.55rem;
+      background: transparent;
+      border: none;
+      color: #8aaec2;
+      cursor: pointer;
+      margin-left: 4px;
+    }
+    .edit-kpi-btn:hover { color: #1f6e8c; }
+
+    /* ===== OCULTAR ANÁLISIS GRÁFICO EN SECCIONES QUE NO SON INICIO ===== */
+    .solo-inicio {
+      display: block;
+    }
+    /* En las secciones que no son inicio, ocultamos el dashboard */
+    #seccion-asesoria .solo-inicio,
+    #seccion-recursos .solo-inicio,
+    #seccion-herramientas .solo-inicio,
+    #seccion-contacto .solo-inicio {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== FONDO INSPIRADO EN PDF ===== -->
+<div class="fondo-pdf">
+  <div class="titulo-grande">E.E.T.P. N° 462</div>
+  <div class="formula">x = 4 &nbsp;&nbsp;&nbsp; π = e²</div>
+  <div class="sub">TALLER DE RESOLUCIÓN DE PROBLEMAS MATEMÁTICOS</div>
+  <div class="profesor">A cargo del PROFESOR BENITES HUGO</div>
+</div>
+
+<!-- ===== OVERLAY DE CARGA ===== -->
+<div class="overlay-carga" id="overlayCarga">
+  <div class="carga-card">
+    <h2><i class="fas fa-user-tie" style="color:#a41e34;"></i> Datos del emprendedor</h2>
+    <p>Completá los datos para comenzar a usar el dashboard</p>
+    <div class="campo">
+      <label>Nombre del emprendedor</label>
+      <input type="text" id="inputEmprendedor" value="Juan Pérez" placeholder="Ej: Juan Pérez">
+    </div>
+    <div class="campo">
+      <label>Nombre del emprendimiento</label>
+      <input type="text" id="inputEmprendimiento" value="Mi Negocio" placeholder="Ej: Mi Negocio">
+    </div>
+    <div class="campo">
+      <label>Email de contacto</label>
+      <input type="email" id="inputEmail" value="juan@email.com" placeholder="ejemplo@email.com">
+    </div>
+    <div class="campo">
+      <label>Teléfono</label>
+      <input type="text" id="inputTelefono" value="+54 9 351 1234567" placeholder="Teléfono">
+    </div>
+    <button class="btn-cargar" id="btnCargarEmprendimiento"><i class="fas fa-rocket"></i> Cargar emprendimiento</button>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD PRINCIPAL ===== -->
+<div id="dashboardPrincipal">
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <h1><i class="fas fa-chart-pie"></i> Dashboard Financiero</h1>
+    <div class="sub"><i class="fas fa-user"></i> <span id="headerEmprendedor">Juan Pérez</span> · <span id="headerEmprendimiento">Mi Negocio</span></div>
+  </header>
+
+  <!-- MENÚ -->
+  <nav class="menu-bar">
+    <div class="container">
+      <a class="activo" data-seccion="inicio">Inicio</a>
+      <a data-seccion="asesoria">Asesoría</a>
+      <a data-seccion="recursos">Recursos</a>
+      <a data-seccion="herramientas">Herramientas</a>
+      <a data-seccion="contacto">Contacto</a>
+    </div>
+  </nav>
+
+  <!-- ===== CONTENEDOR DE SECCIONES ===== -->
+  <div id="contenidoSecciones">
+
+    <!-- ========== INICIO (contiene todo el dashboard) ========== -->
+    <div class="seccion-contenido activa" id="seccion-inicio">
+      <h2><i class="fas fa-home"></i> Inicio</h2>
+      <p>Bienvenido a tu <strong>Dashboard Financiero</strong>. Esta herramienta te permite gestionar y visualizar la salud financiera de tu emprendimiento en tiempo real.</p>
+      <div class="destacado">
+        <strong><i class="fas fa-bullseye"></i> Resumen rápido</strong><br>
+        <span id="resumenInicio">Cargando datos...</span>
+      </div>
+      <div class="grid-info" id="infoInicio">
+        <div class="info-card"><strong>Emprendedor</strong><span id="infoNombre">—</span></div>
+        <div class="info-card"><strong>Emprendimiento</strong><span id="infoEmprendimiento">—</span></div>
+        <div class="info-card"><strong>Ventas mensuales</strong><span id="infoVentas">$0</span></div>
+        <div class="info-card"><strong>Ganancia neta</strong><span id="infoGanancia">$0</span></div>
+        <div class="info-card"><strong>Productos activos</strong><span id="infoProductos">0</span></div>
+        <div class="info-card"><strong>Contacto</strong><span id="infoContacto">—</span></div>
+      </div>
+      <p><i class="fas fa-arrow-right" style="color:#a41e34;"></i> Utiliza el menú para acceder a asesoría personalizada, recursos útiles y herramientas avanzadas.</p>
+
+      <!-- ===== TODO EL ANÁLISIS GRÁFICO Y TABLAS (solo en Inicio) ===== -->
+      <div class="solo-inicio">
+
+        <!-- KPIs -->
+        <section class="kpi-grid" id="kpiGrid">
+          <div class="kpi-card">
+            <div class="label">💰 Ingreso total <button class="edit-kpi-btn" onclick="editarKPI('kpiIngreso')"><i class="fas fa-pen"></i></button></div>
+            <div class="value positive" id="kpiIngreso" contenteditable="false">$0</div>
+            <div class="sub">último mes</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">📦 Costo variable <button class="edit-kpi-btn" onclick="editarKPI('kpiCostoVar')"><i class="fas fa-pen"></i></button></div>
+            <div class="value" id="kpiCostoVar" contenteditable="false">$0</div>
+            <div class="sub">% del ingreso</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">📈 Ganancia neta <button class="edit-kpi-btn" onclick="editarKPI('kpiGanancia')"><i class="fas fa-pen"></i></button></div>
+            <div class="value" id="kpiGanancia" contenteditable="false">$0</div>
+            <div class="sub">margen %</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">⚖️ Punto equilibrio <button class="edit-kpi-btn" onclick="editarKPI('kpiPE')"><i class="fas fa-pen"></i></button></div>
+            <div class="value" id="kpiPE" contenteditable="false">$0</div>
+            <div class="sub">unidades</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">🛡️ Margen seguridad <button class="edit-kpi-btn" onclick="editarKPI('kpiSeguridad')"><i class="fas fa-pen"></i></button></div>
+            <div class="value" id="kpiSeguridad" contenteditable="false">0%</div>
+            <div class="sub">salud financiera</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">⭐ Producto estrella <button class="edit-kpi-btn" onclick="editarKPI('kpiEstrella')"><i class="fas fa-pen"></i></button></div>
+            <div class="value" id="kpiEstrella" style="font-size:1.2rem;" contenteditable="false">—</div>
+            <div class="sub">mayor margen</div>
+          </div>
+        </section>
+
+        <!-- Datos generales -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-sliders-h"></i> Datos generales del negocio
+              <span class="edit-hint">✎ Editá los valores</span>
+              <button class="btn-editar-seccion" onclick="toggleEdicion('datosGenerales')">Editar</button>
+            </div>
+            <div id="datosGenerales" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-weight:600; font-size:0.65rem; color:#1f6e8c; display:block; margin-bottom:2px; font-family:'Montserrat',sans-serif;">Ventas mensuales ($)</label>
+                <input type="number" id="inputVentas" value="9880000" step="100000" style="width:100%; padding:6px 12px; border-radius:40px; border:1px solid #c0d9e8; font-family:inherit; font-weight:500;">
+              </div>
+              <div>
+                <label style="font-weight:600; font-size:0.65rem; color:#1f6e8c; display:block; margin-bottom:2px; font-family:'Montserrat',sans-serif;">Costos fijos ($)</label>
+                <input type="number" id="inputFijos" value="1770200" step="10000" style="width:100%; padding:6px 12px; border-radius:40px; border:1px solid #c0d9e8; font-family:inherit; font-weight:500;">
+              </div>
+              <div>
+                <label style="font-weight:600; font-size:0.65rem; color:#1f6e8c; display:block; margin-bottom:2px; font-family:'Montserrat',sans-serif;">Costos variables ($)</label>
+                <input type="number" id="inputVar" value="4440000" step="100000" style="width:100%; padding:6px 12px; border-radius:40px; border:1px solid #c0d9e8; font-family:inherit; font-weight:500;">
+              </div>
+              <div>
+                <label style="font-weight:600; font-size:0.65rem; color:#1f6e8c; display:block; margin-bottom:2px; font-family:'Montserrat',sans-serif;">Unidades vendidas</label>
+                <input type="number" id="inputUnidades" value="9200" step="100" style="width:100%; padding:6px 12px; border-radius:40px; border:1px solid #c0d9e8; font-family:inherit; font-weight:500;">
+              </div>
+            </div>
+            <div style="margin-top:10px; background:#f0f8ff; border-radius:16px; padding:8px 14px; font-size:0.7rem; color:#1f6e8c;">
+              <i class="fas fa-info-circle"></i> Modificá los números y el dashboard se actualiza automáticamente.
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-chart-line"></i> Resumen automático
+              <span class="edit-hint">cálculo en vivo</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="background:#f8fcff; border-radius:14px; padding:10px; text-align:center; border:1px solid #e2edf5;">
+                <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Ganancia bruta</div>
+                <div style="font-size:1.2rem; font-weight:800; color:#0f3b4f;" id="resBruta">$0</div>
+              </div>
+              <div style="background:#f8fcff; border-radius:14px; padding:10px; text-align:center; border:1px solid #e2edf5;">
+                <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Ganancia neta</div>
+                <div style="font-size:1.2rem; font-weight:800;" id="resNeta">$0</div>
+              </div>
+              <div style="background:#f8fcff; border-radius:14px; padding:10px; text-align:center; border:1px solid #e2edf5;">
+                <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Margen neto</div>
+                <div style="font-size:1.2rem; font-weight:800; color:#0f3b4f;" id="resMargen">0%</div>
+              </div>
+              <div style="background:#f8fcff; border-radius:14px; padding:10px; text-align:center; border:1px solid #e2edf5;">
+                <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Precio promedio</div>
+                <div style="font-size:1.2rem; font-weight:800; color:#0f3b4f;" id="resPrecioProm">$0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Productos y stock -->
+        <div class="grid-2-1">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-percent"></i> Rentabilidad por producto
+              <span class="edit-hint">editá precio, costo y cantidad</span>
+              <button class="btn-editar-seccion" onclick="toggleEdicion('tablaProductos')">Editar</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Producto</th><th>Precio</th><th>Costo</th><th>Cantidad</th><th>Ingreso</th><th>Margen %</th><th>Clasif.</th><th>Acciones</th></tr></thead>
+                <tbody id="tablaProductos"></tbody>
+              </table>
+            </div>
+            <button class="btn-add mt-12" id="btnAgregarProducto"><i class="fas fa-plus"></i> Agregar producto</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><i class="fas fa-warehouse"></i> Control de stock
+              <button class="btn-editar-seccion" onclick="toggleEdicion('tablaStock')">Editar</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="tablaStock"></tbody>
+              </table>
+            </div>
+            <div id="alertStock" class="alert-box success" style="margin-top:8px; font-size:0.7rem;">
+              ✅ Todos los productos con stock suficiente.
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid-2" style="margin-bottom:18px;">
+          <div class="card">
+            <div class="card-title"><i class="fas fa-chart-pie"></i> Composición de ingresos
+              <button class="btn-editar-seccion" onclick="alert('Los gráficos se actualizan automáticamente al modificar los datos.')">Información</button>
+            </div>
+            <div class="chart-container"><canvas id="chartProductos"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><i class="fas fa-chart-line"></i> Evolución mensual (simulada)
+              <button class="btn-editar-seccion" onclick="alert('Los gráficos se actualizan automáticamente al modificar los datos.')">Información</button>
+            </div>
+            <div class="chart-container"><canvas id="chartEvolucion"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Simulador PE + Documentos -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><i class="fas fa-sliders-h"></i> Simulador de punto de equilibrio</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="slider-group">
+                <label>Precio promedio ponderado</label>
+                <input type="range" id="sliderPrecio" min="500" max="2000" value="1134" step="10">
+                <span class="value" id="valPrecio">$1.134</span>
+              </div>
+              <div class="slider-group">
+                <label>Costo variable unitario</label>
+                <input type="range" id="sliderCostoVar" min="200" max="1000" value="525" step="10">
+                <span class="value" id="valCostoVar">$525</span>
+              </div>
+              <div class="slider-group">
+                <label>Costos fijos mensuales</label>
+                <input type="range" id="sliderFijos" min="500000" max="3000000" value="1770200" step="10000">
+                <span class="value" id="valFijos">$1.770.200</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:4px;">
+                <div style="background:#f0f8ff; border-radius:14px; padding:8px; text-align:center;">
+                  <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Punto de equilibrio</div>
+                  <div style="font-size:1.1rem; font-weight:800; color:#0f3b4f;" id="peUnidades">0</div>
+                  <div style="font-size:0.6rem;">unidades</div>
+                </div>
+                <div style="background:#f0f8ff; border-radius:14px; padding:8px; text-align:center;">
+                  <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Ventas en PE</div>
+                  <div style="font-size:1.1rem; font-weight:800; color:#0f3b4f;" id="peVentas">$0</div>
+                </div>
+                <div style="background:#f0f8ff; border-radius:14px; padding:8px; text-align:center;">
+                  <div style="font-size:0.6rem; color:#1f6e8c; font-family:'Montserrat',sans-serif;">Margen seguridad</div>
+                  <div style="font-size:1.1rem; font-weight:800; color:#2b7a4b;" id="peSeguridad">0%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documentos comerciales (sin cliente) -->
+          <div class="card">
+            <div class="card-title"><i class="fas fa-file-invoice"></i> Documentos comerciales
+              <button class="btn-editar-seccion" onclick="toggleEdicion('docFields')">Editar campos</button>
+            </div>
+            <div id="docFields" class="doc-fields">
+              <div>
+                <label>Emprendedor</label>
+                <input type="text" id="docEmprendedor" value="Mi Emprendimiento">
+              </div>
+              <div>
+                <label>Dirección</label>
+                <input type="text" id="docDireccion" value="Calle Falsa 123">
+              </div>
+              <div>
+                <label>Teléfono</label>
+                <input type="text" id="docTelefono" value="+54 9 351 1234567">
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label>Concepto / descripción</label>
+                <input type="text" id="docConcepto" value="Venta de productos varios">
+              </div>
+            </div>
+            <div class="doc-buttons">
+              <button class="doc-btn" onclick="generarPDF('factura')"><i class="fas fa-file-pdf"></i> Factura</button>
+              <button class="doc-btn" onclick="generarPDF('recibo')"><i class="fas fa-file-pdf"></i> Recibo</button>
+              <button class="doc-btn" onclick="generarPDF('nota')"><i class="fas fa-file-pdf"></i> Nota de pedido</button>
+              <button class="doc-btn" onclick="generarPDF('pagare')"><i class="fas fa-file-pdf"></i> Pagaré</button>
+            </div>
+            <div style="margin-top:10px; background:#f8fcff; border-radius:12px; padding:8px 14px; border:1px dashed #c0d9e8; font-size:0.7rem; color:#1f6e8c;">
+              <i class="fas fa-edit"></i> Los datos de los campos se incluirán en el PDF generado.
+            </div>
+          </div>
+        </div>
+      </div><!-- fin solo-inicio -->
+    </div><!-- fin seccion-inicio -->
+
+    <!-- ========== ASESORÍA ========== -->
+    <div class="seccion-contenido" id="seccion-asesoria">
+      <h2><i class="fas fa-handshake"></i> Asesoría</h2>
+      <p>Basado en los datos que has cargado, te ofrecemos las siguientes recomendaciones:</p>
+      <div id="asesoriaContenido" class="destacado">
+        <p>Cargando recomendaciones...</p>
+      </div>
+
+      <h3 style="font-family:'Montserrat',sans-serif; font-size:1rem; color:#221c35; margin-top:20px;"><i class="fas fa-chart-pie"></i> Explicación del gráfico circular</h3>
+      <p>El gráfico circular (doughnut) muestra la <strong>composición de tus ingresos por producto</strong>. Cada porción representa el porcentaje que cada producto aporta al ingreso total. Esto te permite identificar rápidamente cuáles son tus productos más vendidos o los que generan mayor facturación. Si un producto ocupa una porción muy pequeña, quizás sea momento de evaluar su viabilidad o aumentar su promoción.</p>
+
+      <h3 style="font-family:'Montserrat',sans-serif; font-size:1rem; color:#221c35; margin-top:16px;"><i class="fas fa-chart-line"></i> Explicación del gráfico de evolución mensual</h3>
+      <p>El gráfico de líneas muestra la <strong>tendencia de tus ingresos proyectados a 6 meses</strong>. Esta simulación te ayuda a visualizar si tus ventas están creciendo, estables o decreciendo. Una tendencia al alza indica que tu negocio está en expansión, mientras que una tendencia a la baja puede ser una señal de alerta para revisar tu estrategia comercial. La línea suavizada permite ver el comportamiento general sin distraerse con variaciones puntuales.</p>
+
+      <h3 style="font-family:'Montserrat',sans-serif; font-size:1rem; color:#221c35; margin-top:16px;"><i class="fas fa-lightbulb"></i> Recomendaciones personalizadas</h3>
+      <ul id="asesoriaLista">
+        <li>🔍 Revisa tus márgenes por producto para identificar oportunidades de mejora.</li>
+        <li>📊 Monitorea tu punto de equilibrio mensualmente para ajustar costos.</li>
+        <li>📈 Considera aumentar el precio de los productos con mayor demanda.</li>
+      </ul>
+    </div>
+
+    <!-- ========== RECURSOS ========== -->
+    <div class="seccion-contenido" id="seccion-recursos">
+      <h2><i class="fas fa-book"></i> Recursos</h2>
+      <p><strong>Manual de apoyo para el emprendedor</strong></p>
+      <div style="background:#f8fcff; border-radius:16px; padding:16px 20px; border:1px solid #e2edf5; margin:12px 0;">
+        <h4 style="font-family:'Montserrat',sans-serif; color:#221c35;">Contenido del manual</h4>
+        <ul>
+          <li><strong>Introducción:</strong> Conceptos básicos de finanzas para emprendedores.</li>
+          <li><strong>Análisis de ingresos y costos:</strong> Cómo interpretar los números de tu negocio.</li>
+          <li><strong>Punto de equilibrio:</strong> Cálculo y aplicación práctica.</li>
+          <li><strong>Márgenes de ganancia:</strong> Estrategias para mejorarlos.</li>
+          <li><strong>Proyecciones financieras:</strong> Planificación a corto y mediano plazo.</li>
+          <li><strong>Gestión de stock:</strong> Control de inventario y rotación.</li>
+        </ul>
+        <p style="margin-top:10px;">Este manual complementa las recomendaciones de la sección "Asesoría" y te brinda herramientas para tomar decisiones informadas.</p>
+      </div>
+      <button class="doc-btn" onclick="descargarManualPDF()"><i class="fas fa-file-pdf"></i> Descargar manual (PDF)</button>
+    </div>
+
+    <!-- ========== HERRAMIENTAS ========== -->
+    <div class="seccion-contenido" id="seccion-herramientas">
+      <h2><i class="fas fa-tools"></i> Herramientas</h2>
+      <p>Accede a herramientas interactivas para optimizar tu gestión:</p>
+
+      <div class="herramienta-item">
+        <div><i class="fas fa-chart-bar" style="color:#a41e34;"></i> <strong>Proyector de ventas a 6 meses</strong></div>
+        <button class="doc-btn" onclick="generarPDFHerramienta('proyeccion')"><i class="fas fa-file-pdf"></i> Generar análisis (PDF)</button>
+      </div>
+      <div class="herramienta-item">
+        <div><i class="fas fa-exchange-alt" style="color:#a41e34;"></i> <strong>Simulador de escenarios financieros</strong></div>
+        <button class="doc-btn" onclick="generarPDFHerramienta('escenarios')"><i class="fas fa-file-pdf"></i> Generar análisis (PDF)</button>
+      </div>
+      <div class="herramienta-item">
+        <div><i class="fas fa-file-invoice" style="color:#a41e34;"></i> <strong>Generar reporte ejecutivo</strong></div>
+        <button class="doc-btn" onclick="generarPDFHerramienta('reporte')"><i class="fas fa-file-pdf"></i> Generar reporte (PDF)</button>
+      </div>
+    </div>
+
+    <!-- ========== CONTACTO ========== -->
+    <div class="seccion-contenido" id="seccion-contacto">
+      <h2><i class="fas fa-envelope"></i> Contacto</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div>
+          <h4 style="font-family:'Montserrat',sans-serif; color:#221c35;">Institución</h4>
+          <p><strong>E.E.T.P. N° 462</strong><br>
+          Reconquista, Santa Fe<br>
+          <i class="fas fa-phone"></i> +54 9 3482 123456<br>
+          <i class="fas fa-envelope"></i> eetp462@educacion.gob.ar</p>
+        </div>
+        <div>
+          <h4 style="font-family:'Montserrat',sans-serif; color:#221c35;">Datos del emprendedor</h4>
+          <p><strong id="contactoEmprendedor">Juan Pérez</strong><br>
+          <span id="contactoEmprendimiento">Mi Negocio</span><br>
+          <i class="fas fa-envelope"></i> <span id="contactoEmail">juan@email.com</span><br>
+          <i class="fas fa-phone"></i> <span id="contactoTelefono">+54 9 351 1234567</span></p>
+        </div>
+      </div>
+
+      <!-- Botón para consulta y turno -->
+      <div class="consulta-box">
+        <h4 style="font-family:'Montserrat',sans-serif; color:#221c35; margin-bottom:8px;"><i class="fas fa-comment"></i> Consulta y turno</h4>
+        <textarea id="consultaTexto" placeholder="Escribí tu consulta aquí...">Me gustaría asesoramiento sobre mi punto de equilibrio.</textarea>
+        <button class="btn-cargar" style="width:auto; padding:10px 28px; margin-top:10px;" onclick="generarTurno()"><i class="fas fa-calendar-check"></i> Solicitar turno</button>
+        <div id="turnoInfo" class="turno-info"></div>
+      </div>
+    </div>
+
+  </div><!-- fin contenidoSecciones -->
+
+  <!-- PIE -->
+  <footer class="footer">
+    <p>&copy; 2026 · E.E.T.P. N° 462 · Dashboard Financiero · Asesoría para Emprendedores</p>
+    <p style="font-size:0.65rem; opacity:0.6; margin-top:4px;">Reconquista, Santa Fe · Prof. Hugo Benites</p>
+  </footer>
+
+</div><!-- fin container -->
+</div><!-- fin dashboardPrincipal -->
+
+<!-- ============================================================ -->
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+  // ==============================================================
+  // 0. VARIABLES GLOBALES
+  // ==============================================================
+  let productos = [
+    { nombre: "Jabón de ropa", precio: 1600, costo: 600, cantidad: 2500, stock: 1200, stockMin: 800 },
+    { nombre: "Suavizantes", precio: 1100, costo: 600, cantidad: 2000, stock: 950, stockMin: 600 },
+    { nombre: "Detergentes", precio: 1100, costo: 700, cantidad: 1500, stock: 600, stockMin: 700 },
+    { nombre: "Desinfectante", precio: 400, costo: 200, cantidad: 1200, stock: 280, stockMin: 350 },
+    { nombre: "Lavandina", precio: 450, costo: 250, cantidad: 1800, stock: 420, stockMin: 400 }
+  ];
+
+  let datosEmprendedor = {
+    nombre: 'Juan Pérez',
+    emprendimiento: 'Mi Negocio',
+    email: 'juan@email.com',
+    telefono: '+54 9 351 1234567'
+  };
+
+  // ==============================================================
+  // 1. CARGA DE EMPRENDEDOR
+  // ==============================================================
+  document.getElementById('btnCargarEmprendimiento').addEventListener('click', function() {
+    const nombre = document.getElementById('inputEmprendedor').value.trim() || 'Juan Pérez';
+    const emprendimiento = document.getElementById('inputEmprendimiento').value.trim() || 'Mi Negocio';
+    const email = document.getElementById('inputEmail').value.trim() || 'juan@email.com';
+    const telefono = document.getElementById('inputTelefono').value.trim() || '+54 9 351 1234567';
+
+    datosEmprendedor = { nombre, emprendimiento, email, telefono };
+
+    // Actualizar encabezado
+    document.getElementById('headerEmprendedor').textContent = nombre;
+    document.getElementById('headerEmprendimiento').textContent = emprendimiento;
+
+    // Actualizar sección contacto
+    document.getElementById('contactoEmprendedor').textContent = nombre;
+    document.getElementById('contactoEmprendimiento').textContent = emprendimiento;
+    document.getElementById('contactoEmail').textContent = email;
+    document.getElementById('contactoTelefono').textContent = telefono;
+
+    // Actualizar campos de documentos (sin cliente)
+    document.getElementById('docEmprendedor').value = nombre;
+    // Mantener dirección, teléfono, concepto como están
+
+    // Ocultar overlay y mostrar dashboard
+    document.getElementById('overlayCarga').classList.add('oculto');
+    document.getElementById('dashboardPrincipal').classList.add('visible');
+
+    // Actualizar todo el dashboard
+    actualizarTodo();
+  });
+
+  // ==============================================================
+  // 2. DOM REFERENCES
+  // ==============================================================
+  const inputVentas = document.getElementById('inputVentas');
+  const inputFijos = document.getElementById('inputFijos');
+  const inputVar = document.getElementById('inputVar');
+  const inputUnidades = document.getElementById('inputUnidades');
+
+  const kpiIngreso = document.getElementById('kpiIngreso');
+  const kpiCostoVar = document.getElementById('kpiCostoVar');
+  const kpiGanancia = document.getElementById('kpiGanancia');
+  const kpiPE = document.getElementById('kpiPE');
+  const kpiSeguridad = document.getElementById('kpiSeguridad');
+  const kpiEstrella = document.getElementById('kpiEstrella');
+
+  const resBruta = document.getElementById('resBruta');
+  const resNeta = document.getElementById('resNeta');
+  const resMargen = document.getElementById('resMargen');
+  const resPrecioProm = document.getElementById('resPrecioProm');
+
+  const tablaProductos = document.getElementById('tablaProductos');
+  const tablaStock = document.getElementById('tablaStock');
+  const alertStock = document.getElementById('alertStock');
+
+  const sliderPrecio = document.getElementById('sliderPrecio');
+  const sliderCostoVar = document.getElementById('sliderCostoVar');
+  const sliderFijos = document.getElementById('sliderFijos');
+  const valPrecio = document.getElementById('valPrecio');
+  const valCostoVar = document.getElementById('valCostoVar');
+  const valFijos = document.getElementById('valFijos');
+  const peUnidades = document.getElementById('peUnidades');
+  const peVentas = document.getElementById('peVentas');
+  const peSeguridad = document.getElementById('peSeguridad');
+
+  // Elementos de secciones
+  const resumenInicio = document.getElementById('resumenInicio');
+  const infoNombre = document.getElementById('infoNombre');
+  const infoEmprendimiento = document.getElementById('infoEmprendimiento');
+  const infoVentas = document.getElementById('infoVentas');
+  const infoGanancia = document.getElementById('infoGanancia');
+  const infoProductos = document.getElementById('infoProductos');
+  const infoContacto = document.getElementById('infoContacto');
+  const asesoriaContenido = document.getElementById('asesoriaContenido');
+
+  let chartProductos = null;
+  let chartEvolucion = null;
+
+  // ==============================================================
+  // 3. FUNCIONES DE CÁLCULO Y ACTUALIZACIÓN
+  // ==============================================================
+  function calcularTotales() {
+    const ventas = parseFloat(inputVentas.value) || 0;
+    const costosFijos = parseFloat(inputFijos.value) || 0;
+    const costosVar = parseFloat(inputVar.value) || 0;
+    const unidades = parseFloat(inputUnidades.value) || 0;
+    const gananciaBruta = ventas - costosVar;
+    const gananciaNeta = gananciaBruta - costosFijos;
+    const margenNeto = ventas > 0 ? (gananciaNeta / ventas) * 100 : 0;
+    const precioProm = unidades > 0 ? ventas / unidades : 0;
+    return { ventas, costosFijos, costosVar, unidades, gananciaBruta, gananciaNeta, margenNeto, precioProm };
+  }
+
+  function actualizarKPIs() {
+    const data = calcularTotales();
+    const totales = productos.reduce((acc, p) => {
+      acc.ingreso += p.precio * p.cantidad;
+      acc.costo += p.costo * p.cantidad;
+      return acc;
+    }, { ingreso: 0, costo: 0 });
+
+    const ingresoTotal = totales.ingreso || data.ventas;
+    const costoVarTotal = totales.costo || data.costosVar;
+    const ganancia = ingresoTotal - costoVarTotal - data.costosFijos;
+    const margen = ingresoTotal > 0 ? (ganancia / ingresoTotal) * 100 : 0;
+
+    let totalUnidades = productos.reduce((s, p) => s + p.cantidad, 0);
+    let precioPond = 0, costoPond = 0;
+    productos.forEach(p => {
+      precioPond += p.precio * p.cantidad;
+      costoPond += p.costo * p.cantidad;
+    });
+    if (totalUnidades > 0) { precioPond /= totalUnidades; costoPond /= totalUnidades; }
+
+    const mc = precioPond - costoPond;
+    const pe = mc > 0 ? data.costosFijos / mc : Infinity;
+    const peV = pe * precioPond;
+    const seguridad = ingresoTotal > 0 && peV !== Infinity ? ((ingresoTotal - peV) / ingresoTotal) * 100 : 0;
+
+    let estrella = { nombre: '—', margen: -Infinity };
+    productos.forEach(p => {
+      const m = p.precio > 0 ? ((p.precio - p.costo) / p.precio) * 100 : 0;
+      if (m > estrella.margen) { estrella = { nombre: p.nombre, margen: m }; }
+    });
+
+    // Actualizar KPIs
+    kpiIngreso.textContent = '$' + ingresoTotal.toLocaleString();
+    kpiCostoVar.textContent = '$' + costoVarTotal.toLocaleString();
+    kpiGanancia.textContent = '$' + ganancia.toLocaleString();
+    kpiGanancia.className = 'value ' + (ganancia >= 0 ? 'positive' : 'negative');
+    kpiPE.textContent = peV !== Infinity ? '$' + Math.round(peV).toLocaleString() : '∞';
+    kpiSeguridad.textContent = seguridad >= 0 && seguridad !== Infinity ? seguridad.toFixed(1) + '%' : 'N/D';
+    kpiSeguridad.className = 'value ' + (seguridad >= 30 ? 'positive' : seguridad >= 15 ? '' : 'negative');
+    kpiEstrella.textContent = estrella.nombre;
+
+    resBruta.textContent = '$' + (ingresoTotal - costoVarTotal).toLocaleString();
+    resNeta.textContent = '$' + ganancia.toLocaleString();
+    resNeta.style.color = ganancia >= 0 ? '#2b7a4b' : '#c2412c';
+    resMargen.textContent = margen.toFixed(1) + '%';
+    resPrecioProm.textContent = '$' + (precioPond > 0 ? Math.round(precioPond).toLocaleString() : '0');
+
+    // Sliders
+    valPrecio.textContent = '$' + precioPond.toLocaleString();
+    valCostoVar.textContent = '$' + costoPond.toLocaleString();
+    valFijos.textContent = '$' + data.costosFijos.toLocaleString();
+    peUnidades.textContent = pe !== Infinity ? Math.round(pe).toLocaleString() : '∞';
+    peVentas.textContent = peV !== Infinity ? '$' + Math.round(peV).toLocaleString() : '∞';
+    peSeguridad.textContent = seguridad >= 0 && seguridad !== Infinity ? seguridad.toFixed(1) + '%' : 'N/D';
+    peSeguridad.style.color = seguridad >= 30 ? '#2b7a4b' : seguridad >= 15 ? '#f39c12' : '#c2412c';
+
+    sliderPrecio.value = Math.min(Math.max(precioPond, 500), 2000);
+    sliderCostoVar.value = Math.min(Math.max(costoPond, 200), 1000);
+    sliderFijos.value = Math.min(Math.max(data.costosFijos, 500000), 3000000);
+
+    // Actualizar secciones
+    actualizarSecciones(ingresoTotal, ganancia, data);
+  }
+
+  function renderProductos() {
+    tablaProductos.innerHTML = '';
+    productos.forEach((p, idx) => {
+      const tr = document.createElement('tr');
+      const ingreso = p.precio * p.cantidad;
+      const margen = p.precio > 0 ? ((p.precio - p.costo) / p.precio) * 100 : 0;
+      const cls = margen >= 40 ? 'badge-green' : margen >= 25 ? 'badge-yellow' : 'badge-red';
+      const label = margen >= 40 ? '⭐ Estrella' : margen >= 25 ? '🐄 Vaca' : '⚠️ Problema';
+      tr.innerHTML = `
+        <td><input type="text" value="${p.nombre}" data-idx="${idx}" data-field="nombre" class="prod-input" style="max-width:90px;"></td>
+        <td><input type="number" value="${p.precio}" data-idx="${idx}" data-field="precio" class="prod-input" style="max-width:80px;"></td>
+        <td><input type="number" value="${p.costo}" data-idx="${idx}" data-field="costo" class="prod-input" style="max-width:80px;"></td>
+        <td><input type="number" value="${p.cantidad}" data-idx="${idx}" data-field="cantidad" class="prod-input" style="max-width:80px;"></td>
+        <td>$${ingreso.toLocaleString()}</td>
+        <td><span class="badge ${cls}">${margen.toFixed(1)}%</span></td>
+        <td>${label}</td>
+        <td>
+          <button class="btn-accion" onclick="editarProducto(${idx})" title="Editar"><i class="fas fa-pen"></i></button>
+          <button class="btn-accion eliminar" onclick="eliminarProducto(${idx})" title="Eliminar"><i class="fas fa-trash"></i></button>
+        </td>
+      `;
+      tablaProductos.appendChild(tr);
+    });
+
+    document.querySelectorAll('.prod-input').forEach(inp => {
+      inp.addEventListener('input', function() {
+        const idx = parseInt(this.dataset.idx);
+        const field = this.dataset.field;
+        const val = field === 'nombre' ? this.value : parseFloat(this.value) || 0;
+        productos[idx][field] = val;
+        actualizarTodo();
+      });
+    });
+
+    renderStock();
+    actualizarKPIs();
+    actualizarGraficos();
+  }
+
+  function renderStock() {
+    tablaStock.innerHTML = '';
+    let alertas = [];
+    productos.forEach((p, idx) => {
+      const estado = p.stock >= p.stockMin ? 'OK' : p.stock >= p.stockMin * 0.5 ? 'Alerta' : 'Crítico';
+      const cls = estado === 'OK' ? 'badge-green' : estado === 'Alerta' ? 'badge-yellow' : 'badge-red';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.nombre}</td>
+        <td><input type="number" value="${p.stock}" data-idx="${idx}" data-field="stock" class="stock-input" style="max-width:70px;"></td>
+        <td><input type="number" value="${p.stockMin}" data-idx="${idx}" data-field="stockMin" class="stock-input" style="max-width:70px;"></td>
+        <td><span class="badge ${cls}">${estado}</span></td>
+        <td>
+          <button class="btn-accion" onclick="editarStock(${idx})" title="Editar stock"><i class="fas fa-pen"></i></button>
+          <button class="btn-accion eliminar" onclick="eliminarProducto(${idx})" title="Eliminar"><i class="fas fa-trash"></i></button>
+        </td>
+      `;
+      tablaStock.appendChild(tr);
+      if (estado === 'Crítico') alertas.push(`⚠️ ${p.nombre} stock crítico.`);
+      else if (estado === 'Alerta') alertas.push(`⚠️ ${p.nombre} stock bajo.`);
+    });
+
+    if (alertas.length === 0) {
+      alertStock.className = 'alert-box success';
+      alertStock.innerHTML = '✅ Todos los productos con stock suficiente.';
+    } else {
+      alertStock.className = 'alert-box warning';
+      alertStock.innerHTML = alertas.join(' ');
+    }
+
+    document.querySelectorAll('.stock-input').forEach(inp => {
+      inp.addEventListener('input', function() {
+        const idx = parseInt(this.dataset.idx);
+        const field = this.dataset.field;
+        const val = parseFloat(this.value) || 0;
+        productos[idx][field] = val;
+        renderStock();
+        actualizarKPIs();
+      });
+    });
+  }
+
+  function actualizarGraficos() {
+    const ctxProd = document.getElementById('chartProductos').getContext('2d');
+    if (chartProductos) chartProductos.destroy();
+    const labels = productos.map(p => p.nombre);
+    const data = productos.map(p => p.precio * p.cantidad);
+    const colors = ['#1f6e8c', '#2b7a4b', '#f39c12', '#c2412c', '#8a6e9b', '#3498db', '#e67e22'];
+    chartProductos = new Chart(ctxProd, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{ data: data, backgroundColor: colors.slice(0, data.length), borderWidth: 0 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, font: { size: 8 } } },
+          tooltip: { callbacks: { label: ctx => ctx.label + ': $' + ctx.raw.toLocaleString() } }
+        },
+        cutout: '55%'
+      }
+    });
+
+    const ctxEvo = document.getElementById('chartEvolucion').getContext('2d');
+    if (chartEvolucion) chartEvolucion.destroy();
+    const total = productos.reduce((s, p) => s + p.precio * p.cantidad, 0);
+    const base = total > 0 ? total : 1000000;
+    const datosEvo = [
+      base * 0.95, base * 0.98, base * 1.02, base * 1.05, base * 0.97, base * 1.03
+    ];
+    chartEvolucion = new Chart(ctxEvo, {
+      type: 'line',
+      data: {
+        labels: ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'],
+        datasets: [{
+          label: 'Ingresos proyectados',
+          data: datosEvo,
+          borderColor: '#1f6e8c',
+          backgroundColor: 'rgba(31,110,140,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#1f6e8c',
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000000).toFixed(1) + 'M' } }
+        }
+      }
+    });
+  }
+
+  // ----- Actualización de secciones dinámicas -----
+  function actualizarSecciones(ingresoTotal, ganancia, data) {
+    const nombre = datosEmprendedor.nombre || 'Emprendedor';
+    const emprendimiento = datosEmprendedor.emprendimiento || 'Mi Negocio';
+    const cantProductos = productos.length;
+
+    // Inicio
+    resumenInicio.innerHTML = `Tu emprendimiento <strong>${nombre}</strong> (${emprendimiento}) tiene un ingreso total de <strong>$${ingresoTotal.toLocaleString()}</strong> y una ganancia neta de <strong>$${ganancia.toLocaleString()}</strong>. ${ganancia >= 0 ? '✅ Estás generando ganancias.' : '⚠️ Estás en pérdidas. Revisá tus costos.'}`;
+    infoNombre.textContent = nombre;
+    infoEmprendimiento.textContent = emprendimiento;
+    infoVentas.textContent = '$' + ingresoTotal.toLocaleString();
+    infoGanancia.textContent = '$' + ganancia.toLocaleString();
+    infoProductos.textContent = cantProductos;
+    infoContacto.textContent = datosEmprendedor.email + ' | ' + datosEmprendedor.telefono;
+
+    // Asesoría - recomendaciones personalizadas
+    let recomendaciones = [];
+    if (ganancia < 0) {
+      recomendaciones.push('⚠️ Estás teniendo pérdidas. Revisá urgentemente tus costos fijos y variables.');
+    }
+    if (data.margenNeto < 15) {
+      recomendaciones.push('📉 Tu margen neto es bajo (<15%). Considerá aumentar precios o reducir costos.');
+    }
+    const pe = parseFloat(peUnidades.textContent.replace(/\./g,''));
+    if (pe && !isNaN(pe) && pe > 0) {
+      const unidadesActuales = parseFloat(inputUnidades.value) || 0;
+      if (unidadesActuales < pe) {
+        recomendaciones.push(`📊 Estás vendiendo por debajo de tu punto de equilibrio (${Math.round(pe)} unidades). Necesitás aumentar ventas o reducir costos fijos.`);
+      }
+    }
+    if (recomendaciones.length === 0) {
+      recomendaciones.push('✅ ¡Excelente! Tu negocio está en buena salud financiera. Seguí monitoreando tus indicadores.');
+    }
+    asesoriaContenido.innerHTML = recomendaciones.map(r => '<p>' + r + '</p>').join('');
+  }
+
+  // ==============================================================
+  // 4. ACCIONES: EDITAR / ELIMINAR PRODUCTOS Y STOCK
+  // ==============================================================
+  window.editarProducto = function(idx) {
+    const fila = tablaProductos.children[idx];
+    if (fila) {
+      const input = fila.querySelector('input[data-field="nombre"]');
+      if (input) input.focus();
+    }
+  };
+
+  window.editarStock = function(idx) {
+    const fila = tablaStock.children[idx];
+    if (fila) {
+      const input = fila.querySelector('input[data-field="stock"]');
+      if (input) input.focus();
+    }
+  };
+
+  window.eliminarProducto = function(idx) {
+    if (confirm('¿Eliminar el producto "' + productos[idx].nombre + '"?')) {
+      productos.splice(idx, 1);
+      actualizarTodo();
+    }
+  };
+
+  // ==============================================================
+  // 5. FUNCIONES DE EDICIÓN DE SECCIONES (toggle)
+  // ==============================================================
+  function toggleEdicion(seccionId) {
+    const elemento = document.getElementById(seccionId);
+    if (!elemento) return;
+    const inputs = elemento.querySelectorAll('input, textarea');
+    if (inputs.length > 0) {
+      inputs[0].focus();
+      alert('Podés editar los valores directamente en los campos.');
+    } else {
+      alert('Esta sección se edita directamente en sus campos.');
+    }
+  }
+
+  // Para KPI, permitir edición directa (contenteditable)
+  window.editarKPI = function(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.contentEditable = 'true';
+      el.focus();
+      el.addEventListener('blur', function() {
+        this.contentEditable = 'false';
+      }, { once: true });
+    }
+  };
+
+  // ==============================================================
+  // 6. AGREGAR PRODUCTO
+  // ==============================================================
+  document.getElementById('btnAgregarProducto').addEventListener('click', function() {
+    const newId = productos.length + 1;
+    productos.push({
+      nombre: 'Producto ' + newId,
+      precio: 1000,
+      costo: 600,
+      cantidad: 500,
+      stock: 300,
+      stockMin: 200
+    });
+    actualizarTodo();
+  });
+
+  // ==============================================================
+  // 7. EVENTOS DE INPUTS GENERALES
+  // ==============================================================
+  [inputVentas, inputFijos, inputVar, inputUnidades].forEach(inp => {
+    inp.addEventListener('input', () => {
+      actualizarKPIs();
+      actualizarGraficos();
+    });
+  });
+
+  // Sliders
+  [sliderPrecio, sliderCostoVar, sliderFijos].forEach(slider => {
+    slider.addEventListener('input', function() {
+      const precio = parseFloat(sliderPrecio.value);
+      const costo = parseFloat(sliderCostoVar.value);
+      const fijos = parseFloat(sliderFijos.value);
+      valPrecio.textContent = '$' + precio.toLocaleString();
+      valCostoVar.textContent = '$' + costo.toLocaleString();
+      valFijos.textContent = '$' + fijos.toLocaleString();
+      const mc = precio - costo;
+      const pe = mc > 0 ? fijos / mc : Infinity;
+      const peV = pe * precio;
+      const totalIngreso = productos.reduce((s, p) => s + p.precio * p.cantidad, 0);
+      const seg = totalIngreso > 0 && peV !== Infinity ? ((totalIngreso - peV) / totalIngreso) * 100 : 0;
+      peUnidades.textContent = pe !== Infinity ? Math.round(pe).toLocaleString() : '∞';
+      peVentas.textContent = peV !== Infinity ? '$' + Math.round(peV).toLocaleString() : '∞';
+      peSeguridad.textContent = seg >= 0 && seg !== Infinity ? seg.toFixed(1) + '%' : 'N/D';
+      peSeguridad.style.color = seg >= 30 ? '#2b7a4b' : seg >= 15 ? '#f39c12' : '#c2412c';
+    });
+  });
+
+  // ==============================================================
+  // 8. MENÚ: CAMBIAR SECCIONES
+  // ==============================================================
+  const menuLinks = document.querySelectorAll('.menu-bar a');
+  const secciones = {
+    inicio: document.getElementById('seccion-inicio'),
+    asesoria: document.getElementById('seccion-asesoria'),
+    recursos: document.getElementById('seccion-recursos'),
+    herramientas: document.getElementById('seccion-herramientas'),
+    contacto: document.getElementById('seccion-contacto')
+  };
+
+  menuLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const seccionId = this.dataset.seccion;
+      menuLinks.forEach(l => l.classList.remove('activo'));
+      this.classList.add('activo');
+      Object.values(secciones).forEach(sec => sec.classList.remove('activa'));
+      if (secciones[seccionId]) {
+        secciones[seccionId].classList.add('activa');
+      }
+    });
+  });
+
+  // ==============================================================
+  // 9. FUNCIÓN ACTUALIZAR TODO
+  // ==============================================================
+  function actualizarTodo() {
+    renderProductos();
+    renderStock();
+    actualizarKPIs();
+    actualizarGraficos();
+  }
+
+  // ==============================================================
+  // 10. GENERACIÓN DE PDF (documentos comerciales SIN CLIENTE)
+  // ==============================================================
+  window.generarPDF = function(tipo) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const emprendedor = document.getElementById('docEmprendedor').value.trim() || datosEmprendedor.nombre;
+    const direccion = document.getElementById('docDireccion').value.trim() || '';
+    const telefono = document.getElementById('docTelefono').value.trim() || '';
+    const concepto = document.getElementById('docConcepto').value.trim() || 'Venta de productos';
+    const fecha = new Date().toLocaleDateString('es-AR');
+
+    const totalIngreso = productos.reduce((s, p) => s + p.precio * p.cantidad, 0);
+    const totalCosto = productos.reduce((s, p) => s + p.costo * p.cantidad, 0);
+    const fijos = parseFloat(inputFijos.value) || 0;
+    const ganancia = totalIngreso - totalCosto - fijos;
+
+    let titulo = '';
+    let subtitulo = '';
+    switch(tipo) {
+      case 'factura': titulo = 'FACTURA'; subtitulo = 'Comprobante de venta'; break;
+      case 'recibo': titulo = 'RECIBO'; subtitulo = 'Pago recibido'; break;
+      case 'nota': titulo = 'NOTA DE PEDIDO'; subtitulo = 'Solicitud de compra'; break;
+      case 'pagare': titulo = 'PAGARÉ'; subtitulo = 'Documento de crédito'; break;
+      default: titulo = 'DOCUMENTO COMERCIAL';
+    }
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor('#221c35');
+    doc.text('E.E.T.P. N° 462', pageWidth/2, 18, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor('#a41e34');
+    doc.text('Dashboard Financiero · Asesoría para Emprendedores', pageWidth/2, 26, { align: 'center' });
+
+    doc.setDrawColor('#a41e34');
+    doc.setLineWidth(0.5);
+    doc.line(20, 30, pageWidth-20, 30);
+    doc.setLineWidth(1);
+    doc.line(20, 32, pageWidth-20, 32);
+
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor('#221c35');
+    doc.text(titulo, pageWidth/2, 44, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor('#565656');
+    doc.text(subtitulo, pageWidth/2, 52, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.setTextColor('#0f3b4f');
+    doc.text('Emprendedor: ' + emprendedor, 20, 64);
+    if (direccion) doc.text('Dirección: ' + direccion, 20, 70);
+    if (telefono) doc.text('Teléfono: ' + telefono, 20, 76);
+    doc.text('Fecha: ' + fecha, 20, 82);
+    doc.text('Documento N°: ' + Math.floor(Math.random()*10000).toString().padStart(8,'0'), 20, 88);
+    doc.text('Concepto: ' + concepto, 20, 94);
+
+    const tableData = productos.map(p => [
+      p.nombre,
+      '$' + p.precio.toLocaleString(),
+      '$' + p.costo.toLocaleString(),
+      p.cantidad.toLocaleString(),
+      '$' + (p.precio * p.cantidad).toLocaleString()
+    ]);
+
+    doc.autoTable({
+      startY: 100,
+      head: [['Producto', 'Precio', 'Costo', 'Cantidad', 'Total']],
+      body: tableData,
+      theme: 'striped',
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: '#221c35', textColor: '#fff', fontSize: 7, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 25, halign: 'right' },
+        2: { cellWidth: 25, halign: 'right' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 30, halign: 'right' }
+      },
+      margin: { left: 20, right: 20 }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 4;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor('#221c35');
+    doc.text('RESUMEN FINANCIERO', 20, finalY);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor('#1a1a1a');
+    finalY += 5;
+    doc.text('Ingreso total: $' + totalIngreso.toLocaleString(), 20, finalY);
+    finalY += 4;
+    doc.text('Costo variable total: $' + totalCosto.toLocaleString(), 20, finalY);
+    finalY += 4;
+    doc.text('Costos fijos: $' + fijos.toLocaleString(), 20, finalY);
+    finalY += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(ganancia >= 0 ? '#2b7a4b' : '#c2412c');
+    doc.text('Ganancia neta: $' + ganancia.toLocaleString(), 20, finalY);
+    finalY += 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor('#565656');
+    doc.text('Documento generado desde el Dashboard Financiero - E.E.T.P. N° 462', 20, finalY+5);
+    doc.text('Reconquista, Santa Fe - Prof. Hugo Benites', 20, finalY+10);
+
+    doc.save(titulo.replace(/ /g,'_') + '_' + emprendedor + '.pdf');
+  };
+
+  // ==============================================================
+  // 11. DESCARGA DEL MANUAL (PDF)
+  // ==============================================================
+  window.descargarManualPDF = function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor('#221c35');
+    doc.text('E.E.T.P. N° 462', pageWidth/2, 20, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setTextColor('#a41e34');
+    doc.text('Manual de Apoyo para el Emprendedor', pageWidth/2, 30, { align: 'center' });
+
+    doc.setDrawColor('#a41e34');
+    doc.line(20, 35, pageWidth-20, 35);
+
+    const contenido = [
+      ['Introducción', 'Conceptos básicos de finanzas para emprendedores.'],
+      ['Análisis de ingresos y costos', 'Cómo interpretar los números de tu negocio.'],
+      ['Punto de equilibrio', 'Cálculo y aplicación práctica.'],
+      ['Márgenes de ganancia', 'Estrategias para mejorarlos.'],
+      ['Proyecciones financieras', 'Planificación a corto y mediano plazo.'],
+      ['Gestión de stock', 'Control de inventario y rotación.']
+    ];
+
+    doc.autoTable({
+      startY: 42,
+      head: [['Tema', 'Descripción']],
+      body: contenido,
+      theme: 'striped',
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: '#221c35', textColor: '#fff', fontSize: 9, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 100 } },
+      margin: { left: 20, right: 20 }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor('#565656');
+    doc.text('Este manual complementa las recomendaciones de la sección "Asesoría" del Dashboard.', 20, finalY);
+    doc.text('Reconquista, Santa Fe - Prof. Hugo Benites', 20, finalY+6);
+
+    doc.save('Manual_Emprendedor_EETP462.pdf');
+  };
+
+  // ==============================================================
+  // 12. HERRAMIENTAS: GENERAR PDF DE ANÁLISIS
+  // ==============================================================
+  window.generarPDFHerramienta = function(tipo) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const emprendedor = datosEmprendedor.nombre || 'Emprendedor';
+    const emprendimiento = datosEmprendedor.emprendimiento || 'Mi Negocio';
+    const fecha = new Date().toLocaleDateString('es-AR');
+
+    const totalIngreso = productos.reduce((s, p) => s + p.precio * p.cantidad, 0);
+    const totalCosto = productos.reduce((s, p) => s + p.costo * p.cantidad, 0);
+    const fijos = parseFloat(inputFijos.value) || 0;
+    const ganancia = totalIngreso - totalCosto - fijos;
+    const margen = totalIngreso > 0 ? (ganancia / totalIngreso) * 100 : 0;
+
+    let titulo = '';
+    let descripcion = '';
+    let datosExtra = [];
+
+    switch(tipo) {
+      case 'proyeccion':
+        titulo = 'PROYECCIÓN DE VENTAS A 6 MESES';
+        descripcion = 'Simulación de ingresos futuros basada en datos actuales.';
+        const base = totalIngreso > 0 ? totalIngreso : 1000000;
+        const meses = ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'];
+        const valores = [
+          base * 0.95, base * 0.98, base * 1.02, base * 1.05, base * 0.97, base * 1.03
+        ];
+        datosExtra = meses.map((m, i) => [m, '$' + Math.round(valores[i]).toLocaleString()]);
+        break;
+      case 'escenarios':
+        titulo = 'SIMULADOR DE ESCENARIOS FINANCIEROS';
+        descripcion = 'Análisis de escenarios optimista, realista y pesimista.';
+        const escenarios = [
+          ['Optimista (+20%)', '$' + Math.round(totalIngreso * 1.2).toLocaleString(), '$' + Math.round(ganancia * 1.3).toLocaleString()],
+          ['Realista (actual)', '$' + totalIngreso.toLocaleString(), '$' + ganancia.toLocaleString()],
+          ['Pesimista (-15%)', '$' + Math.round(totalIngreso * 0.85).toLocaleString(), '$' + Math.round(ganancia * 0.7).toLocaleString()]
+        ];
+        datosExtra = escenarios;
+        break;
+      case 'reporte':
+        titulo = 'REPORTE EJECUTIVO';
+        descripcion = 'Resumen de la situación financiera actual.';
+        datosExtra = [
+          ['Ingreso total', '$' + totalIngreso.toLocaleString()],
+          ['Costo variable total', '$' + totalCosto.toLocaleString()],
+          ['Costos fijos', '$' + fijos.toLocaleString()],
+          ['Ganancia neta', '$' + ganancia.toLocaleString()],
+          ['Margen neto', margen.toFixed(1) + '%'],
+          ['Punto de equilibrio (unidades)', peUnidades.textContent],
+          ['Margen de seguridad', peSeguridad.textContent]
+        ];
+        break;
+      default: return;
+    }
+
+    // Encabezado
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor('#221c35');
+    doc.text('E.E.T.P. N° 462', pageWidth/2, 18, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor('#a41e34');
+    doc.text('Dashboard Financiero · Herramientas', pageWidth/2, 26, { align: 'center' });
+
+    doc.setDrawColor('#a41e34');
+    doc.setLineWidth(0.5);
+    doc.line(20, 30, pageWidth-20, 30);
+    doc.setLineWidth(1);
+    doc.line(20, 32, pageWidth-20, 32);
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor('#221c35');
+    doc.text(titulo, pageWidth/2, 46, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor('#565656');
+    doc.text(descripcion, pageWidth/2, 54, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.setTextColor('#0f3b4f');
+    doc.text('Emprendedor: ' + emprendedor, 20, 66);
+    doc.text('Emprendimiento: ' + emprendimiento, 20, 72);
+    doc.text('Fecha: ' + fecha, 20, 78);
+
+    let startY = 84;
+    if (tipo === 'proyeccion') {
+      doc.autoTable({
+        startY: startY,
+        head: [['Mes', 'Ingreso proyectado']],
+        body: datosExtra,
+        theme: 'striped',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: '#221c35', textColor: '#fff', fontSize: 9, fontStyle: 'bold' },
+        margin: { left: 20, right: 20 }
+      });
+    } else if (tipo === 'escenarios') {
+      doc.autoTable({
+        startY: startY,
+        head: [['Escenario', 'Ingreso', 'Ganancia']],
+        body: datosExtra,
+        theme: 'striped',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: '#221c35', textColor: '#fff', fontSize: 9, fontStyle: 'bold' },
+        margin: { left: 20, right: 20 }
+      });
+    } else {
+      doc.autoTable({
+        startY: startY,
+        head: [['Indicador', 'Valor']],
+        body: datosExtra,
+        theme: 'striped',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: '#221c35', textColor: '#fff', fontSize: 9, fontStyle: 'bold' },
+        margin: { left: 20, right: 20 }
+      });
+    }
+
+    let finalY = doc.lastAutoTable.finalY + 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor('#565656');
+    doc.text('Documento generado desde el Dashboard Financiero - E.E.T.P. N° 462', 20, finalY+5);
+    doc.text('Reconquista, Santa Fe - Prof. Hugo Benites', 20, finalY+10);
+
+    const nombreArchivo = titulo.replace(/ /g,'_') + '.pdf';
+    doc.save(nombreArchivo);
+  };
+
+  // ==============================================================
+  // 13. CONTACTO: CONSULTA Y TURNO
+  // ==============================================================
+  window.generarTurno = function() {
+    const consulta = document.getElementById('consultaTexto').value.trim() || 'Sin consulta especificada.';
+    const ahora = new Date();
+    const fechaTurno = ahora.toLocaleDateString('es-AR');
+    const horaTurno = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    const turnoInfo = document.getElementById('turnoInfo');
+    turnoInfo.innerHTML = `
+      <i class="fas fa-check-circle"></i> Turno asignado para el <strong>${fechaTurno}</strong> a las <strong>${horaTurno}</strong><br>
+      <span style="font-size:0.85rem; color:#1f6e8c;">Consulta: "${consulta}"</span>
+    `;
+    turnoInfo.style.color = '#2b7a4b';
+  };
+
+  // ==============================================================
+  // 14. INICIALIZACIÓN
+  // ==============================================================
+  // Pre-cargar datos en los campos de documentos
+  document.getElementById('docEmprendedor').value = datosEmprendedor.nombre;
+  // Actualizar contacto con datos iniciales
+  document.getElementById('contactoEmprendedor').textContent = datosEmprendedor.nombre;
+  document.getElementById('contactoEmprendimiento').textContent = datosEmprendedor.emprendimiento;
+  document.getElementById('contactoEmail').textContent = datosEmprendedor.email;
+  document.getElementById('contactoTelefono').textContent = datosEmprendedor.telefono;
+
+  console.log('Dashboard listo. Cargá tus datos para comenzar.');
+</script>
+
+</body>
+</html>
